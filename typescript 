@@ -1,0 +1,90 @@
+import { Component, ElementRef, OnInit, QueryList, Renderer2, ViewChild, ViewChildren } from '@angular/core';
+
+@Component({
+  selector: 'app-hero-slider', // Replace with your actual selector
+  templateUrl: './hero-slider.component.html', // Replace with your actual HTML file
+  styleUrls: ['./hero-slider.component.css'] // Replace with your actual CSS file
+})
+export class HeroSliderComponent implements OnInit {
+
+  @ViewChild('[data-hero-slider]') heroSlider: ElementRef;
+  @ViewChildren('[data-hero-slider-item]') heroSliderItems: QueryList<ElementRef>;
+  @ViewChild('[data-prev-btn]') heroSliderPrevBtn: ElementRef;
+  @ViewChild('[data-next-btn]') heroSliderNextBtn: ElementRef;
+
+  currentSlidePos: number = 0;
+  lastActiveSliderItem: ElementRef;
+
+  updateSliderPos(): void {
+    this.lastActiveSliderItem.nativeElement.classList.remove("active");
+    this.heroSliderItems.toArray()[this.currentSlidePos].nativeElement.classList.add("active");
+    this.lastActiveSliderItem = this.heroSliderItems.toArray()[this.currentSlidePos];
+  }
+
+  slideNext(): void {
+    if (this.currentSlidePos >= this.heroSliderItems.length - 1) {
+      this.currentSlidePos = 0;
+    } else {
+      this.currentSlidePos++;
+    }
+    this.updateSliderPos();
+  }
+
+  slidePrev(): void {
+    if (this.currentSlidePos <= 0) {
+      this.currentSlidePos = this.heroSliderItems.length - 1;
+    } else {
+      this.currentSlidePos--;
+    }
+    this.updateSliderPos();
+  }
+
+  autoSlideInterval: any;
+
+  autoSlide(): void {
+    this.autoSlideInterval = setInterval(() => {
+      this.slideNext();
+    }, 7000);
+  }
+
+  onMouseOver(): void {
+    clearInterval(this.autoSlideInterval);
+  }
+
+  onMouseOut(): void {
+    this.autoSlide();
+  }
+
+  onWindowLoad(): void {
+    this.autoSlide();
+  }
+
+  parallaxItems: ElementRef[];
+
+  onMouseMove(event: MouseEvent): void {
+    let x = (event.clientX / window.innerWidth * 10) - 5;
+    let y = (event.clientY / window.innerHeight * 10) - 5;
+
+    x = x - (x * 2);
+    y = y - (y * 2);
+
+    for (let i = 0; i < this.parallaxItems.length; i++) {
+      x = x * Number(this.parallaxItems[i].nativeElement.dataset.parallaxSpeed);
+      y = y * Number(this.parallaxItems[i].nativeElement.dataset.parallaxSpeed);
+      this.renderer.setStyle(this.parallaxItems[i].nativeElement, 'transform', `translate3d(${x}px, ${y}px, 0px)`);
+    }
+  }
+
+  constructor(private renderer: Renderer2) { }
+
+  ngOnInit(): void {
+    this.lastActiveSliderItem = this.heroSliderItems.first;
+    this.autoSlide();
+
+    // Assuming parallaxItems is set appropriately, e.g., in ngAfterViewInit
+  }
+
+  ngAfterViewInit(): void {
+    this.parallaxItems = this.renderer.selectRootElement('[data-parallax-item]');
+  }
+}
